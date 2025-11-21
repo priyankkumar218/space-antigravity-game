@@ -2,11 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Player } from './Player';
 import { Input } from '../engine/Input';
 import { EntityManager } from '../game/EntityManager';
+import { SoundManager } from '../engine/SoundManager';
 
 describe('Player', () => {
     let player: Player;
     let inputMock: any;
     let entityManagerMock: any;
+    let soundMock: any;
 
     beforeEach(() => {
         inputMock = {
@@ -20,13 +22,21 @@ describe('Player', () => {
             addEntity: vi.fn()
         } as unknown as EntityManager;
 
+        soundMock = {
+            playShoot: vi.fn(),
+            playExplosion: vi.fn(),
+            playHit: vi.fn(),
+            playPowerUp: vi.fn(),
+            playGameOver: vi.fn()
+        } as unknown as SoundManager;
+
         // Mock window size
         vi.stubGlobal('window', {
             innerWidth: 800,
             innerHeight: 600
         });
 
-        player = new Player(400, 500, inputMock, entityManagerMock);
+        player = new Player(400, 500, inputMock, entityManagerMock, soundMock);
     });
 
     it('should move left when left arrow is pressed', () => {
