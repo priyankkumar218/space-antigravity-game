@@ -1,0 +1,22 @@
+{
+  "name": "space-antigravity-game",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "test": "vitest",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "happy-dom": "^12.0.0",
+    "jsdom": "^23.0.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "dependencies": {
+    "dexie": "^3.2.4"
+  }
+}
