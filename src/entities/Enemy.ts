@@ -1,17 +1,21 @@
 import { Entity } from './Entity';
 import { Renderer } from '../engine/Renderer';
+import { EntityManager } from '../game/EntityManager';
+import { Projectile } from './Projectile';
 
-export const enum EnemyType {
-    BASIC,
-    FAST,
-    TANK
+export enum EnemyType {
+    BASIC = 0,
+    FAST = 1,
+    TANK = 2
 }
 
 export class Enemy extends Entity {
-    public health: number;
     public type: EnemyType;
+    public health: number;
     public speed: number;
     public scoreValue: number;
+    private entityManager: EntityManager | null = null;
+    private shootTimer: number = 0;
 
     constructor(x: number, y: number, type: EnemyType, levelMultiplier: number = 1) {
         let width = 30;
@@ -45,8 +49,12 @@ export class Enemy extends Entity {
         super(x, y, width, height);
         this.type = type;
         this.health = health * levelMultiplier;
-        this.speed = speed * (1 + (levelMultiplier - 1) * 0.1); // Slight speed increase
+        this.speed = speed * (1 + (levelMultiplier - 1) * 0.1);
         this.scoreValue = score * levelMultiplier;
+    }
+
+    public setEntityManager(em: EntityManager): void {
+        this.entityManager = em;
     }
 
     public update(deltaTime: number): void {
@@ -55,6 +63,31 @@ export class Enemy extends Entity {
         if (this.y > window.innerHeight) {
             this.active = false;
         }
+
+        // Enemy shooting logic
+        if (this.entityManager && this.y > 0 && this.y < window.innerHeight - 100) {
+            this.shootTimer += deltaTime;
+            let fireRate = 3.0; // Shoot every 3 seconds on average
+
+            if (this.type === EnemyType.FAST) {
+                fireRate = 2.5;
+            } else if (this.type === EnemyType.TANK) {
+                fireRate = 1.8;
+            }
+
+            if (this.shootTimer > fireRate && Math.random() < 0.25) {
+                this.shoot();
+                this.shootTimer = 0;
+            }
+        }
+    }
+
+    private shoot(): void {
+        if (!this.entityManager) return;
+
+        const centerX = this.x + this.width / 2 - 2.5;
+        const bottomY = this.y + this.height;
+        this.entityManager.addProjectile(new Projectile(centerX, bottomY, true));
     }
 
     public render(renderer: Renderer): void {
@@ -93,7 +126,7 @@ export class Enemy extends Entity {
             ctx.fill();
 
         } else if (this.type === EnemyType.FAST) {
-            // Galaga-style butterfly enemy (smaller, faster)
+            // Galaga-style butterfly enemy
             ctx.fillStyle = '#FF69B4';
             ctx.strokeStyle = '#FF1493';
             ctx.lineWidth = 2;
@@ -104,7 +137,7 @@ export class Enemy extends Entity {
             ctx.fill();
             ctx.stroke();
 
-            // Wings (butterfly style)
+            // Wings
             ctx.fillStyle = '#9370DB';
             ctx.beginPath();
             ctx.arc(-this.width * 0.25, -this.height * 0.2, this.width * 0.3, 0, Math.PI * 2);
@@ -123,7 +156,7 @@ export class Enemy extends Entity {
             ctx.fill();
 
         } else if (this.type === EnemyType.TANK) {
-            // Galaga-style boss enemy (larger, tougher)
+            // Galaga-style tank enemy
             ctx.fillStyle = '#DC143C';
             ctx.strokeStyle = '#8B0000';
             ctx.lineWidth = 3;
@@ -134,7 +167,7 @@ export class Enemy extends Entity {
             ctx.fill();
             ctx.stroke();
 
-            // Horns/antennae
+            // Horns
             ctx.beginPath();
             ctx.moveTo(-this.width * 0.3, -this.height * 0.3);
             ctx.lineTo(-this.width * 0.4, -this.height * 0.5);

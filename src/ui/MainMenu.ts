@@ -11,6 +11,7 @@ export class MainMenu {
 
     private async loadHighScores() {
         this.highScores = await Storage.getHighScores();
+        console.log('Loaded high scores:', this.highScores);
     }
 
     public isActive(): boolean {

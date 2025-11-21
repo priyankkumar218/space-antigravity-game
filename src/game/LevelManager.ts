@@ -4,12 +4,13 @@ import { Enemy, EnemyType } from '../entities/Enemy';
 import { Boss } from '../entities/Boss';
 
 export class LevelManager {
-    private levelDuration: number = 120; // 2 minutes in seconds
+    private levelDuration: number = 120; // 2 minutes per level
     private currentLevelTime: number = 0;
     private spawnTimer: number = 0;
     private bossSpawned: boolean = false;
     private entityManager: EntityManager;
     private gameState: GameState;
+    private lastLogTime: number = -1;
 
     constructor(entityManager: EntityManager, gameState: GameState) {
         this.entityManager = entityManager;
@@ -21,8 +22,15 @@ export class LevelManager {
 
         this.currentLevelTime += deltaTime;
 
+        // Debug logging
+        if (Math.floor(this.currentLevelTime) % 5 === 0 && Math.floor(this.currentLevelTime) !== this.lastLogTime) {
+            console.log(`Level ${this.gameState.level}: Time=${this.currentLevelTime.toFixed(1)}s / ${this.levelDuration}s, Boss=${this.bossSpawned}`);
+            this.lastLogTime = Math.floor(this.currentLevelTime);
+        }
+
         // Check for Boss Spawn
         if (this.currentLevelTime >= this.levelDuration && !this.bossSpawned) {
+            console.log('SPAWNING BOSS!');
             this.spawnBoss();
         }
 
@@ -38,6 +46,7 @@ export class LevelManager {
             const boss = this.entityManager.getEnemies().find(e => e instanceof Boss);
             if (!boss && this.bossSpawned) {
                 // Level Complete
+                console.log('Boss defeated! Completing level...');
                 this.completeLevel();
             }
         }
@@ -49,26 +58,33 @@ export class LevelManager {
     }
 
     private spawnEnemy(): void {
+        const types = [EnemyType.BASIC, EnemyType.FAST, EnemyType.TANK];
+        let type = EnemyType.BASIC;
+
+        const rand = Math.random();
+        if (rand < 0.6) {
+            type = EnemyType.BASIC;
+        } else if (rand < 0.85) {
+            type = EnemyType.FAST;
+        } else {
+            type = EnemyType.TANK;
+        }
+
         const x = Math.random() * (window.innerWidth - 50);
         const y = -50;
-
-        // Determine enemy type based on level
-        let type = EnemyType.BASIC;
-        const rand = Math.random();
-
-        if (this.gameState.level > 3 && rand > 0.7) type = EnemyType.FAST;
-        if (this.gameState.level > 5 && rand > 0.9) type = EnemyType.TANK;
-
-        this.entityManager.addEnemy(new Enemy(x, y, type, this.gameState.level));
+        const enemy = new Enemy(x, y, type, this.gameState.level);
+        enemy.setEntityManager(this.entityManager);
+        this.entityManager.addEnemy(enemy);
     }
 
     private spawnBoss(): void {
         this.bossSpawned = true;
-        // Clear existing enemies? Maybe not, adds difficulty.
 
         const x = window.innerWidth / 2 - 50;
         const y = -100;
-        this.entityManager.addEnemy(new Boss(x, y, this.gameState.level, this.entityManager));
+        const boss = new Boss(x, y, this.gameState.level, this.entityManager);
+        this.entityManager.addEnemy(boss);
+        console.log('Boss added to EntityManager:', boss, 'Position:', x, y);
     }
 
     private completeLevel(): void {
@@ -84,7 +100,6 @@ export class LevelManager {
         this.currentLevelTime = 0;
         this.bossSpawned = false;
         this.spawnTimer = 0;
-        // Clear entities handled by Game class or EntityManager reset
     }
 
     public getLevelTime(): number {

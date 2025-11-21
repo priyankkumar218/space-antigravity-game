@@ -1,4 +1,4 @@
-// import Dexie from 'dexie';
+import Dexie, { type Table } from 'dexie';
 
 export interface HighScore {
     id?: number;
@@ -13,38 +13,17 @@ export interface UserConfig {
     difficulty: string;
 }
 
-// Mock implementation to bypass Dexie issues
-class MockTable<T> {
-    private data: T[] = [];
+export class GameDatabase extends Dexie {
+    highScores!: Table<HighScore, number>;
+    config!: Table<UserConfig, number>;
 
-    async add(item: T): Promise<void> {
-        this.data.push(item);
+    constructor() {
+        super('SpaceShooterDB');
+        this.version(1).stores({
+            highScores: '++id, score, level, date',
+            config: '++id, volume, difficulty'
+        });
     }
-
-    async put(item: T): Promise<void> {
-        this.data = [item];
-    }
-
-    async get(key: any): Promise<T | undefined> {
-        return this.data[0];
-    }
-
-    orderBy(key: string) {
-        return {
-            reverse: () => ({
-                limit: (limit: number) => ({
-                    toArray: async () => {
-                        return this.data.sort((a: any, b: any) => b[key] - a[key]).slice(0, limit);
-                    }
-                })
-            })
-        };
-    }
-}
-
-export class GameDatabase {
-    highScores = new MockTable<HighScore>();
-    config = new MockTable<UserConfig>();
 }
 
 export const db = new GameDatabase();
